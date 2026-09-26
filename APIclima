@@ -1,3 +1,4 @@
+import os
 import sys
 import requests
 from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QLineEdit, QPushButton, QVBoxLayout
@@ -81,11 +82,16 @@ class AppClima(QWidget):
         self.botao_enviar.clicked.connect(self.ler_clima) #pra conectar o botão
         
     def ler_clima(self):
-        API_KEY = ("") #<-INSIRA CHAVE API AQUI
+
+        caminho = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)),"API_KEY.txt")
+        
+        with open(caminho, "r", encoding="utf-8") as arquivo:
+            chave = arquivo.read().strip()
 
         cidade = self.input_cidade.text()
 
-        url = f"https://api.openweathermap.org/data/2.5/weather?q={cidade}&appid={API_KEY}&lang=pt_br&units=metric"
+        url = f"https://api.openweathermap.org/data/2.5/weather?q={cidade}&appid={chave}&lang=pt_br&units=metric"
 
         try:
             resposta = requests.get(url)

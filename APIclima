@@ -1,0 +1,188 @@
+import sys
+import requests
+from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QLineEdit, QPushButton, QVBoxLayout
+from PyQt5.QtCore import Qt
+from translate import Translator
+
+class AppClima(QWidget):
+    def __init__(self):
+        super().__init__()
+
+        #preparação dos elementos da janela
+        self.label_cidade = QLabel("Nome da cidade: ", self)
+        self.input_cidade = QLineEdit(self)
+        self.botao_enviar = QPushButton("Enviar", self)
+        self.label_temperatura = QLabel(self)
+        self.label_emoji = QLabel(self)
+        self.label_descricao = QLabel(self)
+
+        self.initUI()
+
+    def initUI(self):
+        self.setWindowTitle("Climainator 9000")
+
+        vbox = QVBoxLayout()
+
+        #transformar os elementos em widgets
+        vbox.addWidget(self.label_cidade)
+        vbox.addWidget(self.input_cidade)
+        vbox.addWidget(self.botao_enviar)
+        vbox.addWidget(self.label_temperatura)
+        vbox.addWidget(self.label_emoji)
+        vbox.addWidget(self.label_descricao)
+
+        self.setLayout(vbox)
+
+        #alinhar horizontalmente
+        self.label_cidade.setAlignment(Qt.AlignCenter)
+        self.input_cidade.setAlignment(Qt.AlignCenter)
+        self.label_temperatura.setAlignment(Qt.AlignCenter)
+        self.label_emoji.setAlignment(Qt.AlignCenter)
+        self.label_descricao.setAlignment(Qt.AlignCenter)
+
+        #dar nomes pra conseguir editer no CSS
+        self.label_cidade.setObjectName("label_cidade")
+        self.input_cidade.setObjectName("input_cidade")
+        self.botao_enviar.setObjectName("botao_enviar")
+        self.label_temperatura.setObjectName("label_temperatura")
+        self.label_emoji.setObjectName("label_emoji")
+        self.label_descricao.setObjectName("label_descricao")
+
+        #Stylesheet no estilo CSS
+        self.setStyleSheet("""
+            QLabel, QPushButton{
+                font-family: calibri;
+                }
+            QLabel#label_cidade{
+                font-size: 40px;
+                font-style: italic;
+                }
+            QLineEdit#input_cidade{
+                font-size: 40px;
+                }
+            QPushButton#botao_enviar{
+                font-size: 30px;
+                font-weight: bold;
+                }
+            QLabel#label_temperatura{
+                font-size: 75px;
+                }
+            QLabel#label_emoji{
+                font-size: 100px;
+                font-family: Segoe UI emoji;
+                }
+            QLabel#label_descricao{
+                font-size: 50px;
+                font-family: calibri;
+                }
+        """)
+
+
+        self.botao_enviar.clicked.connect(self.ler_clima) #pra conectar o botão
+        
+    def ler_clima(self):
+        API_KEY = ("") #<-INSIRA CHAVE API AQUI
+
+        cidade = self.input_cidade.text()
+
+        url = f"https://api.openweathermap.org/data/2.5/weather?q={cidade}&appid={API_KEY}&lang=pt_br&units=metric"
+
+        try:
+            resposta = requests.get(url)
+            resposta.raise_for_status()
+            dados = resposta.json()
+
+            if dados['cod'] == 200: #ação normal caso não ocorra nenhum erro
+                self.mostrar_clima(dados)
+                
+
+        #mensagens de erro
+        except requests.exceptions.HTTPError as erro_HTTP:
+            match resposta.status_code:
+                case 400:
+                    self.mostrar_erro("cidade não encontrada\nverifique sua entrada")
+                case 401:
+                    self.mostrar_erro("chave api inválida\nverifique se a chave está no código")
+                case 403:
+                    self.mostrar_erro("acesso negado\nsem autorização")
+                case 404:
+                    self.mostrar_erro("cidade não encontrada\nverifique sua entrada")
+                case 500:
+                    self.mostrar_erro("erro do servidor\ntente de novo depois")
+                case 502:
+                    self.mostrar_erro("erro de Gateway\nresposta inválida do servidor")
+                case 503:
+                    self.mostrar_erro("serviço indisponível\nservidor inoperante")
+                case 504:
+                    self.mostrar_erro("timeout de Gateway\nsem resposta do servidor")
+                case _:
+                    self.mostrar_erro(f"Erro desconhecido\n(erro_HTTP)")
+
+        except requests.exceptions.ConnectionError:
+            self.mostrar_erro("erro de conexão\nverifique sua internet")
+
+        except requests.exceptions.RequestException as req_error: #último recurso para pegar qualquer erro
+            self.mostrar_erro(f"erro: \n{req_error}")
+
+        
+    def mostrar_erro(self, mensagem):
+        self.label_temperatura.setStyleSheet("font-size: 25px; color: red")
+        self.label_temperatura.setText(mensagem)
+
+        self.label_emoji.clear()
+        self.label_descricao.clear()
+
+    def mostrar_clima(self, dados):
+        temperatura = dados["main"]["temp"] #puxando a temperatura do json da api
+
+
+        self.label_temperatura.setStyleSheet("font-size: 75px; color: black") #para setar a fonte de volta depois da msg de erro
+        self.label_temperatura.setText(f"{temperatura:.0f}°C")
+
+        id_clima = dados["weather"][0]["id"]
+        self.label_emoji.setText(self.mostrar_emoji(id_clima))
+
+        descricao = dados["weather"][0]["description"]
+        
+        self.label_descricao.setText(descricao)
+
+    @staticmethod
+    def mostrar_emoji(id_clima):
+
+        if 200 <= id_clima <= 232:
+            return "⛈️"
+        
+        elif 300 <= id_clima <= 321:
+            return "☁️"
+
+        elif 500 <= id_clima <= 531:
+            return "🌧️"
+
+        elif 600 <= id_clima <= 622:
+            return "🌨️"
+
+        elif 701 <= id_clima <= 741:
+            return "🌫️"
+
+        elif id_clima == 771:
+            return "💨"
+
+        elif id_clima == 781:
+            return "🌪️"
+
+        elif id_clima == 800:
+            return "☀️"
+
+        elif 801 <= id_clima <= 804:
+            return "🌥️"
+
+        else:
+            return ""
+
+
+
+if __name__ == "__main__": #processos para abrir e fechar a janela
+    app = QApplication(sys.argv)
+    app_clima = AppClima()
+    app_clima.show()
+    sys.exit(app.exec_())

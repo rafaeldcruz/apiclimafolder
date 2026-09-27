@@ -3,7 +3,7 @@ import sys
 import requests
 from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QLineEdit, QPushButton, QVBoxLayout
 from PyQt5.QtCore import Qt
-from translate import Translator
+
 
 class AppClima(QWidget):
     def __init__(self):
@@ -78,7 +78,7 @@ class AppClima(QWidget):
                 }
         """)
 
-
+        self.input_cidade.returnPressed.connect(self.ler_clima) #pra conectar o enter do teclado
         self.botao_enviar.clicked.connect(self.ler_clima) #pra conectar o botão
         
     def ler_clima(self):

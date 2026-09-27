@@ -91,7 +91,8 @@ class AppClima(QWidget):
 
         cidade = self.input_cidade.text()
 
-        url = f"https://api.openweathermap.org/data/2.5/weather?q={cidade}&appid={chave}&lang=pt_br&units=metric"
+        url = (f"https://api.openweathermap.org/data/2.5/weather?q={cidade}"
+               f"&appid={chave}&lang=pt_br&units=metric")
 
         try:
             resposta = requests.get(url)
